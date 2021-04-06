@@ -1,0 +1,199 @@
+---
+title: "Project 3"
+author: "Nicholas Rubertone"
+date: "3/30/2021"
+output: pdf_document
+---
+
+
+```{r}
+library(SASxport)
+library(MASS)
+library(FactoMineR)
+library(factoextra)
+```
+
+```{r}
+#Loading Data
+data.health <- read.xport("HSQ_J.XPT")
+data.conditions <- read.xport("MCQ_J.XPT")
+data.demo <- read.xport("DEMO_J.XPT")
+```
+
+```{r}
+#Getting IDs of people that appear in all three
+all.ids <- c(data.health$SEQN, data.conditions$SEQN, data.demo$SEQN)
+shared.ids <- as.numeric(names(table(all.ids)[table(all.ids)==3]))
+```
+
+```{r}
+#Merge datasets
+data.health.subset <- data.health[data.health$SEQN %in% shared.ids, c("SEQN", "HSD010")]
+data.conditions.subset <- data.conditions[data.conditions$SEQN %in% shared.ids, ]
+data.demo.subset <- data.demo[data.demo$SEQN %in% shared.ids, ]
+data.demo.subset <-subset(data.demo, select=-c(SDDSRVYR,RIDSTATR,RIDAGEMN,RIDEXMON,RIDEXAGM,SIAINTRP,SIAPROXY,FIAPROXY,FIAINTRP,MIAPROXY,MIAINTRP,WTINT2YR,WTMEC2YR,SDMVPSU,SDMVSTRA))
+
+
+data.full.temp <- merge(data.health.subset, data.conditions.subset, by = "SEQN")
+data.full <- merge(data.full.temp, data.demo.subset, by = "SEQN")
+#Remove all other datasets, don't need them anymore
+
+rm(data.health)
+rm(data.health.subset)
+rm(data.conditions)
+rm(data.conditions.subset)
+rm(data.demo)
+rm(data.demo.subset)
+```
+
+## Removing Irrelevant Columns
+```{r}
+remove.cols <- c("MCQ025",
+                 "MCQ035",
+                 "MCQ040",
+                 "MCQ050",
+                 "MCD093",
+                 "MCQ149",
+                 "MCQ151",
+                 "RHD018",
+                 "MCD180A",
+                 "MCD180N",
+                 "MCD180B",
+                 "MCD180C",
+                 "MCD180D",
+                 "MCD180E",
+                 "MCD180F",
+                 "MCQ170M",
+                 "MCD180M",
+                 "MCD180G",
+                 "MCQ170K",
+                 "MCD180K",
+                 "MCD180L",
+                 "MCQ170L",
+                 "MCQ206",
+                 "MCQ540",
+                 "MCQ530")
+
+#View subtitles for the removed ones
+View(data.full[,(colnames(data.full) %in% remove.cols)])
+
+#Subset out removed columns
+data.subcols <- data.full[, !(colnames(data.full) %in% remove.cols)]
+
+#Find and remove columns with >= 80% NAs
+remove.NAs <- apply(data.subcols, 2, function(x) sum(is.na(x))/nrow(data.subcols))
+head(remove.NAs)
+
+NAs.80plus <- names(which(remove.NAs >= 0.8))
+
+#Final dataset
+data.cols.final <- data.subcols[, !(colnames(data.subcols) %in% NAs.80plus)]
+data.cols.final <- data.subcols[,-1]
+
+data.final <- data.cols.final
+#Set data types
+
+data.num <- data.final[,colnames(data.final) %in% c("RIDAGEYR","DMDHHSIZ","DMDFMSIZ","DMDHHSZA",
+                      "DMDHHSZB","DMDHHSZE","INDFMPIR")]
+
+data.num<-as.data.frame(apply(data.num, 2, function(x) as.numeric(x)))
+
+
+data.factor <- data.final[,!(colnames(data.final) %in% c("RIDAGEYR","DMDHHSIZ","DMDFMSIZ","DMDHHSZA", "DMDHHSZB","DMDHHSZE","INDFMPIR"))]
+
+data.factor <- as.data.frame(apply(data.factor, 2, function(x) as.factor(x)))
+
+data.combined <- cbind(data.num, data.factor)
+
+#Remove NA
+
+for(i in 1:ncol(data.factor)){
+  tempcol <- data.factor[,i]
+  tempcol[is.na(tempcol)] <- "Missing"
+  data.factor[,i] <- tempcol
+}
+
+```
+
+```{r}
+data.test <- data.factor
+data.test$HSD010[data.test$HSD010 == "Missing"] <- NA
+data.test$HSD010 <- as.factor(data.test$HSD010)
+lm <- lm(HSD010 ~ ., data = data.test)
+
+summary(lm)
+
+
+
+
+```
+
+```{r}
+data.noout <- data.factor[,-which(colnames(data.factor) == "HSD010")]
+data.noout <- data.noout[,!(colnames(data.noout) %in% colnames(data.demo))]
+
+mca.test <- MCA(data.noout, ncp = 10)
+
+#mca.eig <- get_eigenvalue(mca.test)
+#head(mca.eig)
+
+mcavar <- get_mca_var(mca.test)
+
+#mcavar$cos2
+
+fviz_screeplot(mca.test, addlabels = TRUE, ylim = c(0, 45))
+
+
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+
+
+
+
+
+

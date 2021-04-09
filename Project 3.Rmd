@@ -76,7 +76,7 @@ remove.cols <- c("MCQ025",
                  "MCQ530")
 
 #View subtitles for the removed ones
-View(data.full[,(colnames(data.full) %in% remove.cols)])
+#View(data.full[,(colnames(data.full) %in% remove.cols)])
 
 #Subset out removed columns
 data.subcols <- data.full[, !(colnames(data.full) %in% remove.cols)]
@@ -115,13 +115,14 @@ for(i in 1:ncol(data.factor)){
 
 data.combined <- cbind(data.num, data.factor)
 ```
+
 ```{r}
 #remove refused or don't know answers
-which(data.combined$HSD010==7 | data.combined$HSD010==9)
+#which(data.combined$HSD010==7 | data.combined$HSD010==9)
 data.combined<-data.combined[-c(96,277,5919,7773),]
 
 #remove missing
-which(data.combined$HSD010=="Missing")
+#which(data.combined$HSD010=="Missing")
 data.combined.test<-data.combined[-c(which(data.combined$HSD010=="Missing")),]
 ```
 
@@ -129,228 +130,381 @@ data.combined.test<-data.combined[-c(which(data.combined$HSD010=="Missing")),]
 #score loop
 for(i in 1:nrow(data.combined)){
   if(data.combined$MCQ010[i]==1){
-  data.combined$score[i]<-0.043
+  data.combined$score[i]<-0.046
   }
   if(data.combined$MCQ010[i]!=1){
     data.combined$score[i]<-0
   }
   if(data.combined$MCQ195[i]==1){
-     data.combined$score[i]<-sum(data.combined$score[i], 0.128)}
+     data.combined$score[i]<-sum(data.combined$score[i], 0.089)}
+  
   if(data.combined$MCQ195[i]==2){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.199)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.338)}
+  
   if(data.combined$MCQ195[i]==3){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.199)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.338)}
+  
   if(data.combined$MCQ195[i]==4){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.199)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.338)}
+  
   if(data.combined$MCQ160N[i]==1){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.132)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.438)}
+  
   if(data.combined$MCQ160B[i]==1){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.201)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.085)}
+  
+  if(data.combined$MCQ160C[i]==1){
+    data.combined$score[i]<-sum(data.combined$score[i], 0.085)}
+  
   if(data.combined$MCQ160D[i]==1){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.124)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.093)}
+  
   if(data.combined$MCQ160E[i]==1){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.439)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.432)}
+  
   if(data.combined$MCQ160F[i]==1){
-    data.combined$score[i]<-sum(data.combined$score[i], 1.19)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.309)}
+  
+  if(data.combined$MCQ160M[i]==1){
+    data.combined$score[i]<-sum(data.combined$score[i], 0.082)}
+  
   if(data.combined$MCQ160O[i]==1){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.35)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.392)}
+  
+  if(data.combined$MCQ053[i]==1){
+    data.combined$score[i]<-sum(data.combined$score[i], 0.024)}
+  
   if(data.combined$MCQ510A[i]==1){
     data.combined$score[i]<-sum(data.combined$score[i], 0.16)}
+  
   if(data.combined$MCQ510B[i]==2){
     data.combined$score[i]<-sum(data.combined$score[i], 0.16)}
+  
   if(data.combined$MCQ510C[i]==3){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.33)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.22)}
+  
   if(data.combined$MCQ510D[i]==4){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.075)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.22)}
+  
   if(data.combined$MCQ510E[i]==5){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.075)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.22)}
+  
   if(data.combined$MCQ510F[i]==6){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.16)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.22)}
+  
+  if(data.combined$MCQ520[i]==1){
+    data.combined$score[i]<-sum(data.combined$score[i], 0.148)}
+  
+  if(data.combined$MCQ560[i]==1){
+    data.combined$score[i]<-sum(data.combined$score[i], 0.15)}
+  
+  if(data.combined$MCQ203[i]==1){
+    data.combined$score[i]<-sum(data.combined$score[i], 0.387)}
+  
   if(data.combined$MCQ230A[i]==10){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.293)}
+  
   if(data.combined$MCQ230A[i]==11){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230A[i]==12){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230A[i]==13){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230A[i]==14){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230A[i]==15){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.08)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230A[i]==16){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.20)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.26)}
+  
   if(data.combined$MCQ230A[i]==17){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.20)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230A[i]==18){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230A[i]==19){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230A[i]==20){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230A[i]==21){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230A[i]==22){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.20)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230A[i]==23){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.15)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230A[i]==24){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.06)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230A[i]==25){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.05)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230A[i]==26){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230A[i]==27){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230A[i]==28){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.10)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230A[i]==29){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.20)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230A[i]==30){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.13)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230A[i]==31){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.20)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230A[i]==32){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.05)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230A[i]==33){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.05)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230A[i]==34){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230A[i]==35){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.20)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230A[i]==36){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230A[i]==37){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230A[i]==38){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230A[i]==39){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230B[i]==10){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.293)}
+  
   if(data.combined$MCQ230B[i]==11){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230B[i]==12){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230B[i]==13){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230B[i]==14){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230B[i]==15){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.08)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230B[i]==16){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.20)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.26)}
+  
   if(data.combined$MCQ230B[i]==17){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.20)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230B[i]==18){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230B[i]==19){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230B[i]==20){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230B[i]==21){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230B[i]==22){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.20)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230B[i]==23){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.15)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230B[i]==24){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.06)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230B[i]==25){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.05)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230B[i]==26){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230B[i]==27){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230B[i]==28){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.10)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230B[i]==29){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.20)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230B[i]==30){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.13)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230B[i]==31){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.20)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230B[i]==32){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.05)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230B[i]==33){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.05)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230B[i]==34){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230B[i]==35){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.20)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230B[i]==36){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230B[i]==37){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230B[i]==38){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230B[i]==39){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+
   if(data.combined$MCQ230C[i]==10){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.293)}
+  
   if(data.combined$MCQ230C[i]==11){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230C[i]==12){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230C[i]==13){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230C[i]==14){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230C[i]==15){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.08)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230C[i]==16){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.20)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.26)}
+  
   if(data.combined$MCQ230C[i]==17){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.20)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230C[i]==18){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230C[i]==19){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230C[i]==20){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230C[i]==21){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230C[i]==22){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.20)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230C[i]==23){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.15)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230C[i]==24){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.06)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230C[i]==25){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.05)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230C[i]==26){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230C[i]==27){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230C[i]==28){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.10)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230C[i]==29){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.20)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230C[i]==30){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.13)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230C[i]==31){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.20)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230C[i]==32){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.05)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230C[i]==33){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.05)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230C[i]==34){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230C[i]==35){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.20)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230C[i]==36){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230C[i]==37){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230C[i]==38){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)}
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
   if(data.combined$MCQ230C[i]==39){
-    data.combined$score[i]<-sum(data.combined$score[i], 0.09)} 
+    data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
+  
 }
 
 mean(data.combined$score)
 ```
 
+```{r}
+#Figure out which rows should be removed for having no condition data
+namecols.conditions <- colnames(data.conditions.subset[,-1])
+namecols.conditions.combined <- colnames(data.combined)[colnames(data.combined) %in% namecols.conditions]
+
+data.find.no.conditions <- data.combined[,namecols.conditions.combined]
+
+all.answered <- rep(NA, ncol(data.find.no.conditions))
+
+for(i in 1:ncol(data.find.no.conditions)){
+  all.answered[i] <- ifelse(sum(data.find.no.conditions[,i] != "Missing") == nrow(data.find.no.conditions), T, F)
+}
+
+all.answered.cols <- colnames(data.find.no.conditions)[which(all.answered)]
+
+data.find.no.conditions.final <- data.find.no.conditions[,!(colnames(data.find.no.conditions) %in% all.answered.cols)]
+
+
+
+no.conditions <- rep(NA, nrow(data.find.no.conditions.final))
+for (i in 1:nrow(data.find.no.conditions.final)){
+  data.fnc.temp <- as.vector(unlist(data.find.no.conditions.final[i,]))
+  no.conditions[i] <- ifelse(sum(data.fnc.temp == "Missing") == length(data.fnc.temp), T, F)
+}
+sum(no.conditions)/nrow(data.find.no.conditions.final)
+
+#View(data.find.no.conditions[no.conditions, ])
+
+```
 
 ```{r}
 data.test <- data.combined

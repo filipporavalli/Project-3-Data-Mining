@@ -28,12 +28,47 @@ shared.ids <- as.numeric(names(table(all.ids)[table(all.ids)==3]))
 ```
 
 ```{r}
+#Figure out which rows should be removed for having no condition data
+namecols.conditions <- colnames(data.conditions.subset[,-1])
+namecols.conditions.combined <- colnames(data.combined)[colnames(data.combined) %in% namecols.conditions]
+
+data.find.no.conditions <- data.combined[,namecols.conditions.combined]
+
+all.answered <- rep(NA, ncol(data.find.no.conditions))
+
+for(i in 1:ncol(data.find.no.conditions)){
+  all.answered[i] <- ifelse(sum(data.find.no.conditions[,i] != "Missing") == nrow(data.find.no.conditions), T, F)
+}
+
+all.answered.cols <- colnames(data.find.no.conditions)[which(all.answered)]
+
+data.find.no.conditions.final <- data.find.no.conditions[,!(colnames(data.find.no.conditions) %in% all.answered.cols)]
+
+
+
+no.conditions <- rep(NA, nrow(data.find.no.conditions.final))
+for (i in 1:nrow(data.find.no.conditions.final)){
+  data.fnc.temp <- as.vector(unlist(data.find.no.conditions.final[i,]))
+  no.conditions[i] <- ifelse(sum(data.fnc.temp == "Missing") == length(data.fnc.temp), T, F)
+}
+sum(no.conditions)/nrow(data.find.no.conditions.final)
+
+#View(data.find.no.conditions[no.conditions, ])
+
+index<-rownames(data.find.no.conditions[no.conditions, ])
+index<-as.integer(index)
+
+```
+
+
+```{r}
 #Merge datasets
 data.health.subset <- data.health[data.health$SEQN %in% shared.ids, c("SEQN", "HSD010")]
 data.conditions.subset <- data.conditions[data.conditions$SEQN %in% shared.ids, ]
 data.demo.subset <- data.demo[data.demo$SEQN %in% shared.ids, ]
 data.demo.subset <-subset(data.demo, select=-c(SDDSRVYR,RIDSTATR,RIDAGEMN,RIDEXMON,RIDEXAGM,SIAINTRP,SIAPROXY,FIAPROXY,FIAINTRP,MIAPROXY,MIAINTRP,WTINT2YR,WTMEC2YR,SDMVPSU,SDMVSTRA))
 
+data.conditions.subset<-data.conditions.subset[! c(rownames(data.conditions.subset)%in% index),]
 
 data.full.temp <- merge(data.health.subset, data.conditions.subset, by = "SEQN")
 data.full <- merge(data.full.temp, data.demo.subset, by = "SEQN")
@@ -477,47 +512,20 @@ mean(data.combined$score)
 ```
 
 ```{r}
-#Figure out which rows should be removed for having no condition data
-namecols.conditions <- colnames(data.conditions.subset[,-1])
-namecols.conditions.combined <- colnames(data.combined)[colnames(data.combined) %in% namecols.conditions]
-
-data.find.no.conditions <- data.combined[,namecols.conditions.combined]
-
-all.answered <- rep(NA, ncol(data.find.no.conditions))
-
-for(i in 1:ncol(data.find.no.conditions)){
-  all.answered[i] <- ifelse(sum(data.find.no.conditions[,i] != "Missing") == nrow(data.find.no.conditions), T, F)
-}
-
-all.answered.cols <- colnames(data.find.no.conditions)[which(all.answered)]
-
-data.find.no.conditions.final <- data.find.no.conditions[,!(colnames(data.find.no.conditions) %in% all.answered.cols)]
-
-
-
-no.conditions <- rep(NA, nrow(data.find.no.conditions.final))
-for (i in 1:nrow(data.find.no.conditions.final)){
-  data.fnc.temp <- as.vector(unlist(data.find.no.conditions.final[i,]))
-  no.conditions[i] <- ifelse(sum(data.fnc.temp == "Missing") == length(data.fnc.temp), T, F)
-}
-sum(no.conditions)/nrow(data.find.no.conditions.final)
-
-#View(data.find.no.conditions[no.conditions, ])
-
-```
-
-```{r}
 data.test <- data.combined
 data.test$HSD010[data.test$HSD010 == "Missing"] <- NA
 data.test$HSD010 <- as.factor(data.test$HSD010)
 table(data.test$HSD010)
 
 
-vglm<-vglm(HSD010 ~ score+ RIDRETH3 + RIAGENDR, data = data.combined.test, family=multinomial)
+vglm<-vglm(HSD010 ~ score+ RIDRETH3, data = data.combined.test, family=multinomial)
 summary(vglm)
 
 lm1<-lm(score ~ factor(HSD010):factor(RIDRETH3) ,data = data.test)
 summary(lm1)
+
+lm1_valid<-lm(score ~ factor(PHSTAT_A):factor(HISPALLP_A) ,data = valid_data_df)
+summary(lm1_valid)
 
 test_lm <- polr(HSD010 ~ score+ factor(RIDRETH3) + factor(RIAGENDR), data = data.test, Hess=T)
 
@@ -547,6 +555,173 @@ fviz_screeplot(mca.test, addlabels = TRUE, ylim = c(0, 45))
 
 
 
+```
+
+## Validation
+```{r}
+valid_data<-read.csv("adult19.csv")
+#VARIABLES
+var_names<-c("PHSTAT_A","HISPALLP_A",
+  "HISDETP_A",
+  "ASEV_A",
+  "ARTHEV_A",
+ "CHDEV_A",
+ "ANGEV_A",
+ "MIEV_A",
+ "STREV_A",
+ "COPDEV_A",
+ "PAIAPG3M_A",
+"BLADDCAN_A",
+"BLOODCAN_A",
+"BONECAN_A",
+"BRAINCAN_A",
+"BREASCAN_A",
+"CERVICEV_A",
+"COLONCAN_A",
+"ESOPHCAN_A",
+"GALLBCAN_A",
+"LARYNCAN_A",
+"LEUKECAN_A",
+"LIVERCAN_A",
+"LUNGCAN_A",
+"LYMPHCAN_A",
+"MELANCAN_A",
+"MOUTHCAN_A",
+"OVARYCAN_A",
+"PANCRCAN_A",
+"PROSTCAN_A",
+"RECTUCAN_A",
+"SKNNMCAN_A",
+"SKNDKCAN_A",
+"STOMACAN_A",
+"THYROCAN_A",
+"UTERUCAN_A")
+
+valid_data_df<-valid_data[,var_names]
+#fix ethnicity to match original data
+for(i in 1:nrow(valid_data_df)){
+  if(valid_data_df$HISPALLP_A[i]==2){
+    valid_data_df$HISPALLP_A[i]<-3
+    next
+  }
+   if(valid_data_df$HISPALLP_A[i]==3){
+    valid_data_df$HISPALLP_A[i]<-4
+    next
+   }
+  if(valid_data_df$HISPALLP_A[i]==4){
+    valid_data_df$HISPALLP_A[i]<-6
+    next
+  }
+  if(valid_data_df$HISPALLP_A[i]==5){
+    valid_data_df$HISPALLP_A[i]<-7
+    next
+  }
+  if(valid_data_df$HISPALLP_A[i]==6){
+    valid_data_df$HISPALLP_A[i]<-7
+    next
+  }
+  if(valid_data_df$HISPALLP_A[i]==7){
+    valid_data_df$HISPALLP_A[i]<-7
+    next
+  }
+}
+valid_data_df$HISPALLP_A[which(valid_data_df$HISDETP_A==1)]<-1
+valid_data_df$HISPALLP_A[which(valid_data_df$HISDETP_A==2)]<-2
+
+table(valid_data_df$HISPALLP_A)
+
+#remove NA
+remove.NAs <- apply(valid_data_df, 2, function(x) sum(is.na(x))/nrow(valid_data_df))
+head(remove.NAs)
+
+NAs.80plus <- names(which(remove.NAs >= 0.8))
+
+#valid_data_df <- valid_data_df[, !(colnames(valid_data_df) %in% NAs.80plus)]
+
+
+valid_data_df <- as.data.frame(apply(valid_data_df, 2, function(x) as.factor(x)))
+
+
+for(i in 1:ncol(valid_data_df)){
+  tempcol <- valid_data_df[,i]
+  tempcol[is.na(tempcol)] <- "Missing"
+  valid_data_df[,i] <- tempcol
+}
+```
+
+```{r}
+for(i in 1:nrow(valid_data_df)){
+  if(valid_data_df$ASEV_A[i]==1){
+  valid_data_df$score[i]<-0.046}
+  if(valid_data_df$ASEV_A[i]!=1){
+    valid_data_df$score[i]<-0}
+  if(valid_data_df$ARTHEV_A[i]==1){
+     valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.288)}
+  if(valid_data_df$CHDEV_A[i]==1){
+    valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.085)}
+  if(valid_data_df$ANGEV_A[i]==1){
+    valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.093)}
+  if(valid_data_df$MIEV_A[i]==1){
+    valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.432)}
+  if(valid_data_df$STREV_A[i]==1){
+    valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.309)}
+  if(valid_data_df$COPDEV_A[i]==1){
+    valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.392)}
+  if(valid_data_df$PAIAPG3M_A[i]==1){
+    valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.148)}
+  if(valid_data_df$BLADDCAN_A[i]==1){
+    valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.293)}
+  if(valid_data_df$BLOODCAN_A[i]==1){
+    valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.332)}
+  if(valid_data_df$BONECAN_A[i]==1){
+    valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.332)}
+  if(valid_data_df$BRAINCAN_A[i]==1){
+    valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.332)}
+  if(valid_data_df$BREASCAN_A[i]==1){
+    valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.332)}
+  if(valid_data_df$CERVICEV_A[i]==1){
+    valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.332)}
+  if(valid_data_df$COLONCAN_A[i]==1){
+    valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.26)}
+  if(valid_data_df$ESOPHCAN_A[i]==1){
+    valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.332)}
+  if(valid_data_df$GALLBCAN_A[i]==1){
+    valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.332)}
+  if(valid_data_df$LARYNCAN_A[i]==1){
+    valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.332)}
+  if(valid_data_df$LEUKECAN_A[i]==1){
+    valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.332)}
+  if(valid_data_df$LIVERCAN_A[i]==1){
+    valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.332)}
+  if(valid_data_df$LUNGCAN_A[i]==1){
+    valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.332)}
+  if(valid_data_df$LYMPHCAN_A[i]==1){
+    valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.332)}
+  if(valid_data_df$MELANCAN_A[i]==1){
+    valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.332)}
+  if(valid_data_df$MOUTHCAN_A[i]==1){
+    valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.332)}
+  if(valid_data_df$OVARYCAN_A[i]==1){
+    valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.332)}
+  if(valid_data_df$PANCRCAN_A[i]==1){
+    valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.332)}
+  if(valid_data_df$PROSTCAN_A[i]==1){
+    valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.332)}
+  if(valid_data_df$RECTUCAN_A[i]==1){
+    valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.332)}
+  if(valid_data_df$SKNNMCAN_A[i]==1){
+    valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.332)}
+  if(valid_data_df$SKNDKCAN_A[i]==1){
+    valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.332)}
+  if(valid_data_df$STOMACAN_A[i]==1){
+    valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.332)}
+  if(valid_data_df$THYROCAN_A[i]==1){
+    valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.332)}
+  if(valid_data_df$UTERUCAN_A[i]==1){
+    valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.332)}
+}
+
+mean(valid_data_df$score)
 ```
 
 ```{r}

@@ -12,6 +12,12 @@ library(MASS)
 library(FactoMineR)
 library(factoextra)
 library(VGAM)
+
+
+library(tidyverse)
+library(ggpubr)
+library(rstatix)
+library(broom)
 ```
 
 ```{r}
@@ -149,16 +155,6 @@ for(i in 1:ncol(data.factor)){
 }
 
 data.combined <- cbind(data.num, data.factor)
-```
-
-```{r}
-#remove refused or don't know answers
-#which(data.combined$HSD010==7 | data.combined$HSD010==9)
-data.combined<-data.combined[-c(96,277,5919,7773),]
-
-#remove missing
-#which(data.combined$HSD010=="Missing")
-data.combined.test<-data.combined[-c(which(data.combined$HSD010=="Missing")),]
 ```
 
 ```{r}
@@ -507,8 +503,23 @@ for(i in 1:nrow(data.combined)){
     data.combined$score[i]<-sum(data.combined$score[i], 0.332)}
   
 }
+?quantile
+hist()
+quantile(data.combined$score, probs = c(0, 0.2, 0.4, 0.6, 0.8,1), na.rm=T)
+data.combined$score_quant<-quantile(log(data.combined$score), probs=seq(0,1, 0.2))
 
-mean(data.combined$score)
+
+hist(data.combined$score)
+```
+
+```{r}
+#remove refused or don't know answers
+#which(data.combined$HSD010==7 | data.combined$HSD010==9)
+data.combined<-data.combined[-c(83, 5303, 6966),]
+
+#remove missing
+#which(data.combined$HSD010=="Missing")
+data.combined.test<-data.combined[-c(which(data.combined$HSD010=="Missing")),]
 ```
 
 ```{r}
@@ -518,11 +529,41 @@ data.test$HSD010 <- as.factor(data.test$HSD010)
 table(data.test$HSD010)
 
 
-vglm<-vglm(HSD010 ~ score+ RIDRETH3, data = data.combined.test, family=multinomial)
+vglm<-vglm(HSD010 ~ score+ RIDRETH3, data = data.combined.test, family=propodds)
 summary(vglm)
 
-lm1<-lm(score ~ factor(HSD010):factor(RIDRETH3) ,data = data.test)
+lm1<-lm(score ~ factor(HSD010):factor(RIDRETH3) -1,data = data.combined.test)
 summary(lm1)
+
+table(data.combined$RIDRETH3)
+
+mod2 <- as.data.frame(summary(lm1)$coefficients)
+mod2$sig <- NA
+for(i in 1:nrow(mod2)){
+  if(mod2[i, "Pr(>|t|)"] <=0.001){
+    mod2[i, "sig"] <- "***"
+  }else if(mod2[i, "Pr(>|t|)"] <= 0.01){
+    mod2[i, "sig"] <- "**"
+  }else if(mod2[i, "Pr(>|t|)"] <= 0.05){
+    mod2[i, "sig"] <- "*"
+  }else if(mod2[i, "Pr(>|t|)"] <= 0.1){
+    mod2[i, "sig"] <- "."
+  }else if(mod2[i, "Pr(>|t|)"] > 0.1){
+    mod2[i, "sig"] <- ""
+  }
+}
+
+View(mod2)
+
+plot(density(data.combined$score[data.combined$HSD010=="5"]))
+plot(density(data.combined$score))
+ggplot(data=data.combined, aes())+
+
+
+plot(data.combined.test$score, data.combined.test$HSD010)
+
+
+
 
 lm1_valid<-lm(score ~ factor(PHSTAT_A):factor(HISPALLP_A) ,data = valid_data_df)
 summary(lm1_valid)
@@ -535,7 +576,6 @@ p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
 
 ## combined table
 ctable <- cbind(ctable, "p value" = p)
-
 ```
 
 ```{r}
@@ -557,12 +597,14 @@ fviz_screeplot(mca.test, addlabels = TRUE, ylim = c(0, 45))
 
 ```
 
-## Validation
+## NHIS Data
 ```{r}
 valid_data<-read.csv("adult19.csv")
 #VARIABLES
 var_names<-c("PHSTAT_A","HISPALLP_A",
   "HISDETP_A",
+  "INCGRP_A",
+  "URBRRL",
   "ASEV_A",
   "ARTHEV_A",
  "CHDEV_A",
@@ -721,11 +763,63 @@ for(i in 1:nrow(valid_data_df)){
     valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.332)}
 }
 
-mean(valid_data_df$score)
+
+plot(density(valid_data_df$score[valid_data_df$PHSTAT_A=="4" & valid_data_df$INCGRP==1]), xlim=c(0,2.5), col="red")
+abline(v=mean(valid_data_df$score[valid_data_df$PHSTAT_A=="4" & valid_data_df$INCGRP==1]),col="red")
+lines(density(valid_data_df$score[valid_data_df$PHSTAT_A=="4" & valid_data_df$INCGRP==2]),xlim=c(0,2.5), col="blue")
+abline(v=mean(valid_data_df$score[valid_data_df$PHSTAT_A=="4" & valid_data_df$INCGRP==2]),col="blue")
+lines(density(valid_data_df$score[valid_data_df$PHSTAT_A=="4" & valid_data_df$INCGRP==3]),xlim=c(0,2.5),col="green")
+abline(v=mean(valid_data_df$score[valid_data_df$PHSTAT_A=="4" & valid_data_df$INCGRP==3]),col="green")
+lines(density(valid_data_df$score[valid_data_df$PHSTAT_A=="4" & valid_data_df$INCGRP==4]),xlim=c(0,2.5), col="pink")
+abline(v=mean(valid_data_df$score[valid_data_df$PHSTAT_A=="4" & valid_data_df$INCGRP==4]),col="pink")
+lines(density(valid_data_df$score[valid_data_df$PHSTAT_A=="4" & valid_data_df$INCGRP==5]),xlim=c(0,2.5), col="black")
+abline(v=mean(valid_data_df$score[valid_data_df$PHSTAT_A=="4" & valid_data_df$INCGRP==5]),col="black")
+legend("topright", legend = c("0-35000", "35000-50000", "50000-75000", "75000-99000", "100000+"), col = c("red","blue", "green", "pink","black"), lty = 1)
+
+
+plot(density(valid_data_df$score[valid_data_df$PHSTAT_A=="5" & valid_data_df$INCGRP==5]),xlim=c(0,2.5), col="black")
+abline(v=mean(valid_data_df$score[valid_data_df$PHSTAT_A=="5" & valid_data_df$HISPALLP_A==5]),col="black")
+
+lines(density(valid_data_df$score[valid_data_df$PHSTAT_A=="1" & valid_data_df$HISPALLP_A==5]),xlim=c(0,2.5), col="black")
+
+plot(density(valid_data_df$score),xlim=c(0,2.5))
+
+boxplot(valid_data_df$score~valid_data_df$PHSTAT_A)
+
+boxplot(data.combined.test$score~data.combined.test$HSD010)
+
+
+plot(density(valid_data_df$score))
+lines()
+
+
 ```
 
 ```{r}
+lm1<-lm(score ~ PHSTAT_A:INCGRP_A -1,data = valid_data_df)
+mod2 <- as.data.frame(summary(lm1)$coefficients)
+mod2$sig <- NA
+for(i in 1:nrow(mod2)){
+  if(mod2[i, "Pr(>|t|)"] <=0.001){
+    mod2[i, "sig"] <- "***"
+  }else if(mod2[i, "Pr(>|t|)"] <= 0.01){
+    mod2[i, "sig"] <- "**"
+  }else if(mod2[i, "Pr(>|t|)"] <= 0.05){
+    mod2[i, "sig"] <- "*"
+  }else if(mod2[i, "Pr(>|t|)"] <= 0.1){
+    mod2[i, "sig"] <- "."
+  }else if(mod2[i, "Pr(>|t|)"] > 0.1){
+    mod2[i, "sig"] <- ""
+  }
+}
+valid_data_df$INCGRP_A
+View(mod2)
 
+quantile(valid_data_df$score, seq(0,1, 0.2))
+#model validation to determine score var
+#based on score, what did you put for each income category
+#proportion of people
+#should capture perceived health not just counts
 ```
 
 ```{r}

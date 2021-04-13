@@ -815,7 +815,101 @@ for(i in 1:nrow(mod2)){
 valid_data_df$INCGRP_A
 View(mod2)
 
-quantile(valid_data_df$score, seq(0,1, 0.2))
+quant<-quantile(valid_data_df$score, seq(0,1, 0.2))
+quant[[5]]
+
+for(i in 1:nrow(valid_data_df)){
+  if(valid_data_df$score[i] <= quant[[2]]){
+    valid_data_df$score_quant[i]<-1
+  }
+  if(valid_data_df$score[i] <= quant[[3]] & valid_data_df$score[i] > quant[[2]]){
+    valid_data_df$score_quant[i]<-2
+  }
+  if(valid_data_df$score[i] <= quant[[4]] & valid_data_df$score[i] > quant[[3]]){
+    valid_data_df$score_quant[i]<-3
+  }
+  if(valid_data_df$score[i] <= quant[[5]] & valid_data_df$score[i] > quant[[4]]){
+    valid_data_df$score_quant[i]<-4
+  }
+  if(valid_data_df$score[i] <= quant[[6]] & valid_data_df$score[i] > quant[[5]]){
+    valid_data_df$score_quant[i]<-5
+  }
+}
+
+for(i in 1:nrow(valid_data_df)){
+  if(valid_data_df$score_quant[i]==valid_data_df$PHSTAT_A[i]){
+    valid_data_df$percep_true[i]<-1
+  }
+  else{valid_data_df$percep_true[i]<-0}
+}
+finaltab<-matrix(NA, nrow=5, ncol=7)
+for(i in 1:length(unique(valid_data_df$INCGRP_A))){
+  for(x in 1:length(unique(valid_data_df$PHSTAT_A))){
+    test<-valid_data_df$percep_true[valid_data_df$INCGRP_A==i & valid_data_df$PHSTAT_A==unique(sort(valid_data_df$PHSTAT_A, decreasing=F))[x]] 
+    vec1<-sum(test)/length(test)
+    finaltab[i,x]<-vec1
+  }
+}
+
+#finaltab<-finaltab[,-c(6,7)]
+rownames(finaltab) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
+colnames(finaltab) <- c("Excellent","Very Good","Good","Fair","Poor", "Don't Know", "Missing")
+finaltab<-round((finaltab*100), 2)
+finaltab
+
+finaltab_wrong<-matrix(NA, nrow=5, ncol=7)
+for(i in 1:length(unique(valid_data_df$INCGRP_A))){
+  for(x in 1:length(unique(valid_data_df$PHSTAT_A))){
+    test<-valid_data_df$percep_true[valid_data_df$INCGRP_A==i & valid_data_df$PHSTAT_A==unique(sort(valid_data_df$PHSTAT_A, decreasing=F))[x]] 
+    vec1<-length(which(test==0))/length(test)
+    finaltab_wrong[i,x]<-vec1
+  }
+}
+
+#finaltab_wrong<-finaltab_wrong[,-c(6,7)]
+rownames(finaltab_wrong) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
+colnames(finaltab_wrong) <- c("Excellent","Very Good","Good","Fair","Poor", "Don't Know", "Missing")
+finaltab_wrong<-round((finaltab_wrong*100), 2)
+finaltab_wrong
+
+
+finaltab_100<-matrix(NA, nrow=5, ncol=7)
+for(i in 1:length(unique(valid_data_df$INCGRP_A))){
+  for(x in 1:length(unique(valid_data_df$PHSTAT_A))){
+    test<-valid_data_df$percep_true[valid_data_df$INCGRP_A==i & valid_data_df$PHSTAT_A==unique(sort(valid_data_df$PHSTAT_A, decreasing=F))[x]] 
+    vec1<-sum(test)/nrow(valid_data_df[valid_data_df$INCGRP_A==i,])
+    finaltab_100[i,x]<-vec1
+  }
+}
+
+finaltab_100<-finaltab_100[,-c(6,7)]
+rownames(finaltab_100) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
+colnames(finaltab_100) <- c("Excellent","Very Good","Good","Fair","Poor","Don't Know", "Missing")
+finaltab_100<-round((finaltab_100*100), 2)
+finaltab_100
+
+i<-1
+x<-1
+finaltab_100_wrong<-matrix(NA, nrow=5, ncol=7)
+for(i in 1:length(unique(valid_data_df$INCGRP_A))){
+  for(x in 1:length(unique(valid_data_df$PHSTAT_A))){
+    test<-valid_data_df$percep_true[valid_data_df$INCGRP_A==i & valid_data_df$PHSTAT_A==unique(sort(valid_data_df$PHSTAT_A, decreasing=F))[x]] 
+    vec1<-length(which(test==0))/nrow(valid_data_df[valid_data_df$INCGRP_A==i,])
+    finaltab_100_wrong[i,x]<-vec1
+  }
+}
+sum(test)
+finaltab_100_wrong<-finaltab_100_wrong[,-c(6,7)]
+rownames(finaltab_100_wrong) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
+colnames(finaltab_100_wrong) <- c("Excellent","Very Good","Good","Fair","Poor", "Don't Know", "Missing")
+finaltab_100_wrong<-round((finaltab_100_wrong*100), 2)
+finaltab_100_wrong
+
+finaltab_100_wrong
+finaltab_100
+sum(finaltab_100_wrong[5,],finaltab_100[5,])
+
+
 #model validation to determine score var
 #based on score, what did you put for each income category
 #proportion of people

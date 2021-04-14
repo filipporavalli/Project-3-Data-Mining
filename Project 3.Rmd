@@ -557,25 +557,17 @@ View(mod2)
 
 plot(density(data.combined$score[data.combined$HSD010=="5"]))
 plot(density(data.combined$score))
-ggplot(data=data.combined, aes())+
+
 
 
 plot(data.combined.test$score, data.combined.test$HSD010)
 
 
 
-
-lm1_valid<-lm(score ~ factor(PHSTAT_A):factor(HISPALLP_A) ,data = valid_data_df)
+lm1_valid<-lm(score ~ factor(PHSTAT_A)+factor(INCGRP_A) ,data = valid_data_df)
 summary(lm1_valid)
+plot(lm1_valid$fitted.values, lm1_valid$residuals)
 
-test_lm <- polr(HSD010 ~ score+ factor(RIDRETH3) + factor(RIAGENDR), data = data.test, Hess=T)
-
-
-ctable <- coef(summary(lm))
-p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
-
-## combined table
-ctable <- cbind(ctable, "p value" = p)
 ```
 
 ```{r}
@@ -842,6 +834,20 @@ for(i in 1:nrow(valid_data_df)){
   }
   else{valid_data_df$percep_true[i]<-0}
 }
+
+for(i in 1:nrow(valid_data_df)){
+  if(abs(valid_data_df$score_quant[i] - as.numeric(valid_data_df$PHSTAT_A[i]))<2){
+    valid_data_df$percep_true_2[i]<-1
+  }
+  else{valid_data_df$percep_true_2[i]<-0}
+}
+
+
+```
+
+
+```{r}
+#This table is saying the % of people who answered exactly correctly by each cell (subset of data based on row/column intersection, so the value is based on total number of people who belong to x perceived health category and y income bracket)
 finaltab<-matrix(NA, nrow=5, ncol=7)
 for(i in 1:length(unique(valid_data_df$INCGRP_A))){
   for(x in 1:length(unique(valid_data_df$PHSTAT_A))){
@@ -856,6 +862,63 @@ rownames(finaltab) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999
 colnames(finaltab) <- c("Excellent","Very Good","Good","Fair","Poor", "Don't Know", "Missing")
 finaltab<-round((finaltab*100), 2)
 finaltab
+
+#This table is saying the % of people who answered correctly within +/-1 category by each cell (subset of data based on row/column intersection, so the value is based on total number of people who belong to x perceived health category and y income bracket)
+finaltab2<-matrix(NA, nrow=5, ncol=7)
+for(i in 1:length(unique(valid_data_df$INCGRP_A))){
+  for(x in 1:length(unique(valid_data_df$PHSTAT_A))){
+    test<-valid_data_df$percep_true_2[valid_data_df$INCGRP_A==i & valid_data_df$PHSTAT_A==unique(sort(valid_data_df$PHSTAT_A, decreasing=F))[x]] 
+    vec1<-sum(test)/length(test)
+    finaltab2[i,x]<-vec1
+  }
+}
+rownames(finaltab2) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
+colnames(finaltab2) <- c("Excellent","Very Good","Good","Fair","Poor", "Don't Know", "Missing")
+finaltab2<-round((finaltab2*100), 2)
+finaltab2
+
+
+#This table is how many responses were exactly correct for each individual perceived category by income bracket. Each cell is saying x% of people in y income category were correct.
+finaltab_100<-matrix(NA, nrow=5, ncol=7)
+for(i in 1:length(unique(valid_data_df$INCGRP_A))){
+  for(x in 1:length(unique(valid_data_df$PHSTAT_A))){
+    test<-valid_data_df$percep_true[valid_data_df$INCGRP_A==i & valid_data_df$PHSTAT_A==unique(sort(valid_data_df$PHSTAT_A, decreasing=F))[x]] 
+    vec1<-sum(test)/nrow(valid_data_df[valid_data_df$INCGRP_A==i,])
+    finaltab_100[i,x]<-vec1
+  }
+}
+rownames(finaltab_100) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
+colnames(finaltab_100) <- c("Excellent","Very Good","Good","Fair","Poor","Row Total", "missing")
+finaltab_100<-round((finaltab_100*100), 2)
+finaltab_100[,6]<-rowSums(finaltab_100)
+finaltab_100<-finaltab_100[,-c(7)]
+finaltab_100
+
+
+
+#This table is how many responses were correct within +/-1 perceieved health category by income bracket Each cell is saying x% of people in y income bracket were correctly within +/-1 perceived health category.
+finaltab_100_2<-matrix(NA, nrow=5, ncol=7)
+for(i in 1:length(unique(valid_data_df$INCGRP_A))){
+  for(x in 1:length(unique(valid_data_df$PHSTAT_A))){
+    test<-valid_data_df$percep_true_2[valid_data_df$INCGRP_A==i & valid_data_df$PHSTAT_A==unique(sort(valid_data_df$PHSTAT_A, decreasing=F))[x]] 
+    vec1<-sum(test)/nrow(valid_data_df[valid_data_df$INCGRP_A==i,])
+    finaltab_100_2[i,x]<-vec1
+  }
+}
+
+rownames(finaltab_100_2) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
+colnames(finaltab_100_2) <- c("Excellent","Very Good","Good","Fair","Poor","Row Total", "missing")
+finaltab_100_2<-round((finaltab_100_2*100), 2)
+finaltab_100_2[,6]<-rowSums(finaltab_100_2)
+finaltab_100_2<-finaltab_100_2[,-c(7)]
+finaltab_100_2
+
+#tables, if true excellent or true poor, row adds up to 100, other col show where inaccuracies went
+```
+
+```{r}
+#tables for % wrong
+
 
 finaltab_wrong<-matrix(NA, nrow=5, ncol=7)
 for(i in 1:length(unique(valid_data_df$INCGRP_A))){
@@ -873,23 +936,8 @@ finaltab_wrong<-round((finaltab_wrong*100), 2)
 finaltab_wrong
 
 
-finaltab_100<-matrix(NA, nrow=5, ncol=7)
-for(i in 1:length(unique(valid_data_df$INCGRP_A))){
-  for(x in 1:length(unique(valid_data_df$PHSTAT_A))){
-    test<-valid_data_df$percep_true[valid_data_df$INCGRP_A==i & valid_data_df$PHSTAT_A==unique(sort(valid_data_df$PHSTAT_A, decreasing=F))[x]] 
-    vec1<-sum(test)/nrow(valid_data_df[valid_data_df$INCGRP_A==i,])
-    finaltab_100[i,x]<-vec1
-  }
-}
 
-finaltab_100<-finaltab_100[,-c(6,7)]
-rownames(finaltab_100) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
-colnames(finaltab_100) <- c("Excellent","Very Good","Good","Fair","Poor","Don't Know", "Missing")
-finaltab_100<-round((finaltab_100*100), 2)
-finaltab_100
 
-i<-1
-x<-1
 finaltab_100_wrong<-matrix(NA, nrow=5, ncol=7)
 for(i in 1:length(unique(valid_data_df$INCGRP_A))){
   for(x in 1:length(unique(valid_data_df$PHSTAT_A))){
@@ -898,26 +946,12 @@ for(i in 1:length(unique(valid_data_df$INCGRP_A))){
     finaltab_100_wrong[i,x]<-vec1
   }
 }
-sum(test)
+
 finaltab_100_wrong<-finaltab_100_wrong[,-c(6,7)]
 rownames(finaltab_100_wrong) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
 colnames(finaltab_100_wrong) <- c("Excellent","Very Good","Good","Fair","Poor", "Don't Know", "Missing")
 finaltab_100_wrong<-round((finaltab_100_wrong*100), 2)
 finaltab_100_wrong
-
-finaltab_100_wrong
-finaltab_100
-sum(finaltab_100_wrong[5,],finaltab_100[5,])
-
-
-#model validation to determine score var
-#based on score, what did you put for each income category
-#proportion of people
-#should capture perceived health not just counts
-```
-
-```{r}
-
 ```
 
 ```{r}

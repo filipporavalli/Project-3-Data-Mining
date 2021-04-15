@@ -847,11 +847,11 @@ for(i in 1:nrow(valid_data_df)){
 
 
 ```{r}
-#This table is saying the % of people who answered exactly correctly by each cell (subset of data based on row/column intersection, so the value is based on total number of people who belong to x perceived health category and y income bracket)
+#This table is saying the % of people who answered exactly correctly by each cell (subset of data based on row/column intersection, so the value is based on total number of people who belong to x actual health category and y income bracket)
 finaltab<-matrix(NA, nrow=5, ncol=7)
 for(i in 1:length(unique(valid_data_df$INCGRP_A))){
   for(x in 1:length(unique(valid_data_df$PHSTAT_A))){
-    test<-valid_data_df$percep_true[valid_data_df$INCGRP_A==i & valid_data_df$PHSTAT_A==unique(sort(valid_data_df$PHSTAT_A, decreasing=F))[x]] 
+    test<-valid_data_df$percep_true[valid_data_df$INCGRP_A==i & valid_data_df$score_quant==x] 
     vec1<-sum(test)/length(test)
     finaltab[i,x]<-vec1
   }
@@ -863,11 +863,11 @@ colnames(finaltab) <- c("Excellent","Very Good","Good","Fair","Poor", "Don't Kno
 finaltab<-round((finaltab*100), 2)
 finaltab
 
-#This table is saying the % of people who answered correctly within +/-1 category by each cell (subset of data based on row/column intersection, so the value is based on total number of people who belong to x perceived health category and y income bracket)
+#This table is saying the % of people who answered correctly within +/-1 category by each cell (subset of data based on row/column intersection, so the value is based on total number of people who belong to x actual health category and y income bracket)
 finaltab2<-matrix(NA, nrow=5, ncol=7)
 for(i in 1:length(unique(valid_data_df$INCGRP_A))){
   for(x in 1:length(unique(valid_data_df$PHSTAT_A))){
-    test<-valid_data_df$percep_true_2[valid_data_df$INCGRP_A==i & valid_data_df$PHSTAT_A==unique(sort(valid_data_df$PHSTAT_A, decreasing=F))[x]] 
+    test<-valid_data_df$percep_true_2[valid_data_df$INCGRP_A==i & valid_data_df$score_quant==x] 
     vec1<-sum(test)/length(test)
     finaltab2[i,x]<-vec1
   }
@@ -882,7 +882,7 @@ finaltab2
 finaltab_100<-matrix(NA, nrow=5, ncol=7)
 for(i in 1:length(unique(valid_data_df$INCGRP_A))){
   for(x in 1:length(unique(valid_data_df$PHSTAT_A))){
-    test<-valid_data_df$percep_true[valid_data_df$INCGRP_A==i & valid_data_df$PHSTAT_A==unique(sort(valid_data_df$PHSTAT_A, decreasing=F))[x]] 
+    test<-valid_data_df$percep_true[valid_data_df$INCGRP_A==i & valid_data_df$score_quant==x] 
     vec1<-sum(test)/nrow(valid_data_df[valid_data_df$INCGRP_A==i,])
     finaltab_100[i,x]<-vec1
   }
@@ -900,7 +900,7 @@ finaltab_100
 finaltab_100_2<-matrix(NA, nrow=5, ncol=7)
 for(i in 1:length(unique(valid_data_df$INCGRP_A))){
   for(x in 1:length(unique(valid_data_df$PHSTAT_A))){
-    test<-valid_data_df$percep_true_2[valid_data_df$INCGRP_A==i & valid_data_df$PHSTAT_A==unique(sort(valid_data_df$PHSTAT_A, decreasing=F))[x]] 
+    test<-valid_data_df$percep_true_2[valid_data_df$INCGRP_A==i & valid_data_df$score_quant==x] 
     vec1<-sum(test)/nrow(valid_data_df[valid_data_df$INCGRP_A==i,])
     finaltab_100_2[i,x]<-vec1
   }
@@ -914,6 +914,43 @@ finaltab_100_2<-finaltab_100_2[,-c(7)]
 finaltab_100_2
 
 #tables, if true excellent or true poor, row adds up to 100, other col show where inaccuracies went
+
+#table for poor and excellent examining where percent of other choices went
+
+finaltab_excel<-matrix(NA, nrow=5, ncol=7)
+for(i in 1:length(unique(valid_data_df$INCGRP_A))){
+  for(x in 1:length(unique(valid_data_df$PHSTAT_A))){
+  test<-valid_data_df[valid_data_df$INCGRP_A==i & valid_data_df$score_quant==1,]
+  vec1<-nrow(test[test$PHSTAT_A==unique(sort(test$PHSTAT_A, decreasing=F))[x],])/nrow(test)
+  finaltab_excel[i,x]<-vec1
+  }
+}
+finaltab_excel<-finaltab_excel[,-c(6,7)]
+finaltab_excel<-round((finaltab_excel*100), 2)
+finaltab_excel<-cbind(finaltab_excel,c(rowSums(finaltab_excel)))
+rownames(finaltab_excel) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
+colnames(finaltab_excel) <- c("Excellent","Very Good","Good","Fair","Poor","Row Total")
+finaltab_excel
+
+
+
+finaltab_poor<-matrix(NA, nrow=5, ncol=7)
+for(i in 1:length(unique(valid_data_df$INCGRP_A))){
+  for(x in 1:length(unique(valid_data_df$PHSTAT_A))){
+  test<-valid_data_df[valid_data_df$INCGRP_A==i & valid_data_df$score_quant==5,]
+  vec1<-nrow(test[test$PHSTAT_A==unique(sort(test$PHSTAT_A, decreasing=F))[x],])/nrow(test)
+  finaltab_poor[i,x]<-vec1
+  }
+}
+finaltab_poor<-finaltab_poor[,-c(6,7)]
+finaltab_poor<-round((finaltab_poor*100), 2)
+finaltab_poor<-cbind(finaltab_poor,c(rowSums(finaltab_poor)))
+colnames(finaltab_poor) <- c("Excellent","Very Good","Good","Fair","Poor","Row Total")
+rownames(finaltab_poor) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
+finaltab_poor
+
+finaltab_excel
+finaltab2
 ```
 
 ```{r}

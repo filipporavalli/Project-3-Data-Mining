@@ -217,119 +217,314 @@ valid_data_df$INCGRP_A
 #View(mod2)
 ```
 
-## Validation
+
+## Validation Loop
 ```{r}
-#lm1<-lm(score ~ PHSTAT_A:INCGRP_A,data = valid_data_df)
-valid_data_df.test <- valid_data_df[as.numeric(valid_data_df$PHSTAT_A) %in% c(1,2,3,4,5), ]
-#valid_data_df.test$PHSTAT_A <- as.numeric(valid_data_df.test$PHSTAT_A) 
+n <- 100
 
-partition.rule <- createDataPartition(valid_data_df.test$score, p = 0.8, list = F)
-#partition.rule <- createDataPartition(valid_data_df.test$PHSTAT_A, p = 0.8, list = F)
-training.data <- valid_data_df.test[partition.rule, ]
-testing.data <- valid_data_df.test[-partition.rule, ]
+vloop.exact.value <- rep(NA, n)
+vloop.approx.value <- rep(NA, n)
+vloop.approx.income.total <- list()
+vloop.exact.income.total <- list()
+vloop.income.distribution <- list()
+vloop.exact.income.score <- list()
+vloop.approx.income.score <- list()
 
-split.rule <- trainControl(method="repeatedcv", number = 10, repeats = 5, classProbs = F, summaryFunction = defaultSummary)
-glmModel <- suppressWarnings(train(score ~ PHSTAT_A:INCGRP_A, data = training.data, trControl = split.rule, method = "glm", preProc = c("center", "scale"), metric = "RMSE", na.action = na.omit))
+for (q in 1:n){
+	valid_data_df.test <- valid_data_df[as.numeric(valid_data_df$PHSTAT_A) %in% c(1,2,3,4,5), ]
 
-#glmModel
+	partition.rule <- createDataPartition(valid_data_df.test$score, p = 0.8, list = F)
+	training.data <- valid_data_df.test[partition.rule, ]
+	testing.data <- valid_data_df.test[-partition.rule, ]
+	
+	split.rule <- trainControl(method="repeatedcv", number = 5, repeats = 2, classProbs = F, summaryFunction = defaultSummary)	
+	glmModel <- suppressWarnings(train(score ~ PHSTAT_A:INCGRP_A, data = training.data, trControl = split.rule, method = "glm", preProc = c("center", "scale"), metric = "RMSE", 	na.action = na.omit))
+	
+	glmTest <- predict(glmModel, newdata = testing.data)
+	
 
-glmTest <- predict(glmModel, newdata = testing.data)
-quantile(glmTest, seq(0,1, 0.2))
-#View(cbind(testing.data$score, as.numeric(glmTest)))
-```
+	
+	
+	score.quants <-quantile(valid_data_df$score, seq(0,1, 0.2))
+	test.score.categories <- ifelse(testing.data$score <= score.quants[2], 1, 
+	                                ifelse(testing.data$score > score.quants[2] & testing.data$score <= score.quants[3], 2, 
+	                                       ifelse(testing.data$score > score.quants[3] & testing.data$score <= score.quants[4], 3,
+	                                              ifelse(testing.data$score > score.quants[4] & testing.data$score <= score.quants[5], 4,
+	                                                     ifelse(testing.data$score > score.quants[5], 5, NA)))))
+	
+	
+	pred.score.quants <- quantile(valid_data_df$score, seq(0,1, 0.2))
+	pred.score.categories <- ifelse(glmTest <= pred.score.quants[2], 1, 
+	                                ifelse(glmTest > pred.score.quants[2] & glmTest <= pred.score.quants[3], 2, 
+	                                       ifelse(glmTest > pred.score.quants[3] & glmTest <= pred.score.quants[4], 3,
+	                                              ifelse(glmTest > pred.score.quants[4] & glmTest <= pred.score.quants[5], 4,
+	                                                     ifelse(glmTest > pred.score.quants[5], 5, NA)))))
+	
 
-```{r}
-#test.score.categories <- as.numeric(testing.data$PHSTAT_A)
-score.quants <-quantile(valid_data_df$score, seq(0,1, 0.2))
-test.score.categories <- ifelse(testing.data$score <= score.quants[2], 1, 
-                                ifelse(testing.data$score > score.quants[2] & testing.data$score <= score.quants[3], 2, 
-                                       ifelse(testing.data$score > score.quants[3] & testing.data$score <= score.quants[4], 3,
-                                              ifelse(testing.data$score > score.quants[4] & testing.data$score <= score.quants[5], 4,
-                                                     ifelse(testing.data$score > score.quants[5], 5, NA)))))
+	
+	
+	
+	
+	raw.pred.classification <- table(testing.data$INCGRP_A, test.score.categories)
+	prop.pred.classification <- raw.pred.classification
+	colnames(prop.pred.classification) <- c("Excellent","Very Good","Good","Fair","Poor")
+	rownames(prop.pred.classification) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
+	
+	for(i in 1:5){
+	  prop.pred.classification[i, ] <- prop.pred.classification[i, ]/sum(prop.pred.classification[i, ])
+	}
+	
+	#What was the breakdown of the predictions by health status and income
+	vloop.income.distribution[[q]] <- prop.pred.classification
 
+	
+	
+	
+	
+	
+	accuracy.df <- data.frame(test.score.categories, pred.score.categories, as.numeric(pred.score.categories-test.score.categories), as.numeric((pred.score.categories-test.score.categories) %in% c(0, -1, 1)), 	testing.data$INCGRP_A)
+	colnames(accuracy.df) <- c("True.Score", "Predicted.Score", "Exact.Correct", "Approx.Correct", "Income.Group")
+	
+	
+	#General Accuracy
+	vloop.exact.value[q] <- mean(accuracy.df$Exact.Correct)
+	vloop.approx.value[q] <-mean(accuracy.df$Approx.Correct)
 
-#pred.score.quants <- quantile(glmTest, seq(0,1, 0.2))
-pred.score.quants <- quantile(valid_data_df$score, seq(0,1, 0.2))
-pred.score.categories <- ifelse(glmTest <= pred.score.quants[2], 1, 
-                                ifelse(glmTest > pred.score.quants[2] & glmTest <= pred.score.quants[3], 2, 
-                                       ifelse(glmTest > pred.score.quants[3] & glmTest <= pred.score.quants[4], 3,
-                                              ifelse(glmTest > pred.score.quants[4] & glmTest <= pred.score.quants[5], 4,
-                                                     ifelse(glmTest > pred.score.quants[5], 5, NA)))))
+  
 
+	
+	#Accuracy by Income
+	
+	test.accuracy.mat.approx.total <- matrix(rep(NA,5), nrow = 5, ncol = 1)
+	colnames(test.accuracy.mat.approx.total) <- c("Total Accuracy")
+	rownames(test.accuracy.mat.approx.total) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
+	
+	for(i in 1:5){
+	  test.accuracy.mat.approx.total[i,1] <- mean(accuracy.df[accuracy.df$Income.Group == i, "Approx.Correct"])
+	}
+	
+	vloop.approx.income.total[[q]] <- test.accuracy.mat.approx.total
 
-#View(cbind(test.score.categories, pred.score.categories))
+	
+	test.accuracy.mat.exact.total <- matrix(rep(NA,5), nrow = 5, ncol = 1)
+	colnames(test.accuracy.mat.exact.total) <- c("Total Accuracy")
+	rownames(test.accuracy.mat.exact.total) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
+	
+	for(i in 1:5){
+	  test.accuracy.mat.exact.total[i,1] <- mean(accuracy.df[accuracy.df$Income.Group == i, "Exact.Correct"])
+	}
+	
+	vloop.exact.income.total[[q]] <- test.accuracy.mat.exact.total
+  
+  
+  
+	
+	
+  #Stratified Accuracy
+  test.accuracy.mat.exact <- matrix(rep(NA,25), nrow = 5, ncol = 5)
+	colnames(test.accuracy.mat.exact) <- c("Excellent","Very Good","Good","Fair","Poor")
+	rownames(test.accuracy.mat.exact) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
+	
+	for(i in 1:5){
+	  for(j in 1:5){
+	    test.accuracy.mat.exact[i,j] <- mean(accuracy.df[accuracy.df$Income.Group == i & accuracy.df$True.Score == j, "Exact.Correct"])
+	  }
+	}
+	
+	test.accuracy.mat.approx <- matrix(rep(NA,25), nrow = 5, ncol = 5)
+	colnames(test.accuracy.mat.approx) <- c("Excellent","Very Good","Good","Fair","Poor")
+	rownames(test.accuracy.mat.approx) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
+	
+	for(i in 1:5){
+	  for(j in 1:5){
+	    test.accuracy.mat.approx[i,j] <- mean(accuracy.df[accuracy.df$Income.Group == i & accuracy.df$True.Score == j, "Approx.Correct"])
+	  }
+	}
 
-test.accuracy <- test.score.categories == pred.score.categories
+		
+	#What was the exact prediction accuracy
+	vloop.exact.income.score[[q]] <- test.accuracy.mat.exact
+	
+	#What was the approximate  prediction accuracy (+/- 1)
+	vloop.approx.income.score[[q]] <- test.accuracy.mat.approx
 
-mean(test.accuracy)
-```
-
-```{r}
-#testing within 1
-within.test <- pred.score.categories <= (test.score.categories + 1) & pred.score.categories >= (test.score.categories - 1)
-mean(within.test)
-
-```
-
-```{r}
-pred.dif <- pred.score.categories - test.score.categories
-
-hist(pred.dif)
-
-sum((table(pred.dif)/sum(table(pred.dif)))[4:6])
-
-```
-
-```{r}
-raw.pred.classification <- table(testing.data$INCGRP_A, test.score.categories)
-prop.pred.classification <- raw.pred.classification
-colnames(prop.pred.classification) <- c("Excellent","Very Good","Good","Fair","Poor")
-rownames(prop.pred.classification) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
-
-for(i in 1:5){
-  prop.pred.classification[i, ] <- prop.pred.classification[i, ]/sum(prop.pred.classification[i, ])
+  
+	
+	
 }
-
-#What was the breakdown of the predictions by health status and income
-prop.pred.classification
 ```
 
+## Valdation Visualizations
 ```{r}
-test.accuracy.mat.exact <- matrix(rep(NA,25), nrow = 5, ncol = 5)
-colnames(test.accuracy.mat.exact) <- c("Excellent","Very Good","Good","Fair","Poor")
-rownames(test.accuracy.mat.exact) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
+mean(vloop.exact.value)
+mean(vloop.approx.value) 
+vloop.valid.approx.income.total <- Reduce("+", vloop.approx.income.total) / length(vloop.approx.income.total)
+vloop.valid.exact.income.total <- Reduce("+", vloop.exact.income.total) / length(vloop.exact.income.total)
+vloop.valid.income.distribution <- Reduce("+", vloop.income.distribution) / length(vloop.income.distribution)
+vloop.valid.exact.income.score <- Reduce("+", vloop.exact.income.score) / length(vloop.exact.income.score)
+vloop.valid.approx.income.score <- Reduce("+", vloop.approx.income.score) / length(vloop.approx.income.score)
 
-for(i in 1:5){
-  for(j in 1:5){
-    test.accuracy.mat.exact[i,j] <- mean(test.accuracy[test.score.categories %in% c(i) & testing.data$INCGRP_A==j])
-  }
-}
+write.table(round(vloop.valid.approx.income.total*100,2), "clipboard", sep="\t", col.names = T)
+write.table(round(vloop.valid.approx.income.score*100,2), "clipboard", sep="\t", col.names = T)
 
-test.accuracy.mat.approx <- matrix(rep(NA,25), nrow = 5, ncol = 5)
-colnames(test.accuracy.mat.approx) <- c("Excellent","Very Good","Good","Fair","Poor")
-rownames(test.accuracy.mat.approx) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
+ttable <- as.matrix(vloop.valid.income.distribution) * vloop.valid.approx.income.score
+rowSums(ttable)
+vloop.valid.approx.income.total
 
-for(i in 1:5){
-  for(j in 1:5){
-    test.accuracy.mat.approx[i,j] <- mean(test.accuracy[test.score.categories %in% c(i, i-1, i+1) & testing.data$INCGRP_A==j])
-  }
-}
-
-#What was the exact prediction accuracy
-test.accuracy.mat.exact
-
-#What was the approximate  prediction accuracy (=/- 1)
-test.accuracy.mat.approx
 ```
 
-
-
-
-
-
+## Reduced Model Comparison
 ```{r}
-#confusion matrix
-confusionMatrix(factor(pred.score.categories), factor(test.score.categories))
+n <- 100
+
+vloop.exact.value.null <- rep(NA, n)
+vloop.approx.value.null <- rep(NA, n)
+vloop.approx.income.total.null <- list()
+vloop.income.distribution.null <- list()
+vloop.exact.income.score.null <- list()
+vloop.approx.income.score.null <- list()
+vloop.exact.income.total.null <- list()
+
+for (q in 1:n){
+	valid_data_df.test <- valid_data_df[as.numeric(valid_data_df$PHSTAT_A) %in% c(1,2,3,4,5), ]
+
+	partition.rule <- createDataPartition(valid_data_df.test$score, p = 0.8, list = F)
+	training.data <- valid_data_df.test[partition.rule, ]
+	testing.data <- valid_data_df.test[-partition.rule, ]
+	
+	split.rule <- trainControl(method="repeatedcv", number = 5, repeats = 2, classProbs = F, summaryFunction = defaultSummary)	
+  glmModel <- suppressWarnings(train(score ~ INCGRP_A, data = training.data, trControl = split.rule, method = "glm", preProc = c("center", "scale"), metric = "RMSE", 	na.action = na.omit))
+  
+	glmTest <- predict(glmModel, newdata = testing.data)
+	
+
+	
+	
+	score.quants <-quantile(valid_data_df$score, seq(0,1, 0.2))
+	test.score.categories <- ifelse(testing.data$score <= score.quants[2], 1, 
+	                                ifelse(testing.data$score > score.quants[2] & testing.data$score <= score.quants[3], 2, 
+	                                       ifelse(testing.data$score > score.quants[3] & testing.data$score <= score.quants[4], 3,
+	                                              ifelse(testing.data$score > score.quants[4] & testing.data$score <= score.quants[5], 4,
+	                                                     ifelse(testing.data$score > score.quants[5], 5, NA)))))
+	
+	
+	pred.score.quants <- quantile(valid_data_df$score, seq(0,1, 0.2))
+	pred.score.categories <- ifelse(glmTest <= pred.score.quants[2], 1, 
+	                                ifelse(glmTest > pred.score.quants[2] & glmTest <= pred.score.quants[3], 2, 
+	                                       ifelse(glmTest > pred.score.quants[3] & glmTest <= pred.score.quants[4], 3,
+	                                              ifelse(glmTest > pred.score.quants[4] & glmTest <= pred.score.quants[5], 4,
+	                                                     ifelse(glmTest > pred.score.quants[5], 5, NA)))))
+	
+
+	
+	
+	
+	
+	raw.pred.classification <- table(testing.data$INCGRP_A, test.score.categories)
+	prop.pred.classification <- raw.pred.classification
+	colnames(prop.pred.classification) <- c("Excellent","Very Good","Good","Fair","Poor")
+	rownames(prop.pred.classification) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
+	
+	for(i in 1:5){
+	  prop.pred.classification[i, ] <- prop.pred.classification[i, ]/sum(prop.pred.classification[i, ])
+	}
+	
+	#What was the breakdown of the predictions by health status and income
+	vloop.income.distribution.null[[q]] <- prop.pred.classification
+
+	
+	
+	
+	
+	
+	accuracy.df <- data.frame(test.score.categories, pred.score.categories, as.numeric(pred.score.categories-test.score.categories), as.numeric((pred.score.categories-test.score.categories) %in% c(0, -1, 1)), 	testing.data$INCGRP_A)
+	colnames(accuracy.df) <- c("True.Score", "Predicted.Score", "Exact.Correct", "Approx.Correct", "Income.Group")
+	
+	
+	#General Accuracy
+	vloop.exact.value.null[q] <- mean(accuracy.df$Exact.Correct)
+	vloop.approx.value.null[q] <-mean(accuracy.df$Approx.Correct)
+
+  
+
+	
+	#Accuracy by Income
+	
+	test.accuracy.mat.approx.total <- matrix(rep(NA,5), nrow = 5, ncol = 1)
+	colnames(test.accuracy.mat.approx.total) <- c("Total Accuracy")
+	rownames(test.accuracy.mat.approx.total) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
+	
+	for(i in 1:5){
+	  test.accuracy.mat.approx.total[i,1] <- mean(accuracy.df[accuracy.df$Income.Group == i, "Approx.Correct"])
+	}
+	
+	vloop.approx.income.total.null[[q]] <- test.accuracy.mat.approx.total
+
+	
+	test.accuracy.mat.exact.total <- matrix(rep(NA,5), nrow = 5, ncol = 1)
+	colnames(test.accuracy.mat.exact.total) <- c("Total Accuracy")
+	rownames(test.accuracy.mat.exact.total) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
+	
+	for(i in 1:5){
+	  test.accuracy.mat.exact.total[i,1] <- mean(accuracy.df[accuracy.df$Income.Group == i, "Exact.Correct"])
+	}
+	
+	vloop.exact.income.total.null[[q]] <- test.accuracy.mat.exact.total
+  
+  
+  
+	
+	
+  #Stratified Accuracy
+  test.accuracy.mat.exact <- matrix(rep(NA,25), nrow = 5, ncol = 5)
+	colnames(test.accuracy.mat.exact) <- c("Excellent","Very Good","Good","Fair","Poor")
+	rownames(test.accuracy.mat.exact) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
+	
+	for(i in 1:5){
+	  for(j in 1:5){
+	    test.accuracy.mat.exact[i,j] <- mean(accuracy.df[accuracy.df$Income.Group == i & accuracy.df$True.Score == j, "Exact.Correct"])
+	  }
+	}
+	
+	test.accuracy.mat.approx <- matrix(rep(NA,25), nrow = 5, ncol = 5)
+	colnames(test.accuracy.mat.approx) <- c("Excellent","Very Good","Good","Fair","Poor")
+	rownames(test.accuracy.mat.approx) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
+	
+	for(i in 1:5){
+	  for(j in 1:5){
+	    test.accuracy.mat.approx[i,j] <- mean(accuracy.df[accuracy.df$Income.Group == i & accuracy.df$True.Score == j, "Approx.Correct"])
+	  }
+	}
+
+		
+	#What was the exact prediction accuracy
+	vloop.exact.income.score.null[[q]] <- test.accuracy.mat.exact
+	
+	#What was the approximate  prediction accuracy (+/- 1)
+	vloop.approx.income.score.null[[q]] <- test.accuracy.mat.approx
+
+  
+	
+	
+}
+```
+
+## Reduced Model Visualizations
+```{r}
+mean(vloop.exact.value.null)
+mean(vloop.approx.value.null) 
+vloop.valid.approx.income.total.null <- Reduce("+", vloop.approx.income.total.null) / length(vloop.approx.income.total.null)
+vloop.valid.exact.income.total.null <- Reduce("+", vloop.exact.income.total.null) / length(vloop.exact.income.total.null)
+vloop.valid.income.distribution.null <- Reduce("+", vloop.income.distribution.null) / length(vloop.income.distribution.null)
+vloop.valid.exact.income.score.null <- Reduce("+", vloop.exact.income.score.null) / length(vloop.exact.income.score.null)
+vloop.valid.approx.income.score.null <- Reduce("+", vloop.approx.income.score.null) / length(vloop.approx.income.score.null)
+
+write.table(round(vloop.valid.approx.income.total.null*100,2), "clipboard", sep="\t", col.names = T)
+write.table(round(vloop.valid.approx.income.score.null*100,2), "clipboard", sep="\t", col.names = T)
+
+ttable <- as.matrix(vloop.valid.income.distribution.null) * vloop.valid.approx.income.score.null
+rowSums(ttable)
+vloop.valid.approx.income.total.null
 
 ```
 

@@ -1,9 +1,9 @@
 # Project-3-Data-Mining
 Our project examines the relationship between perceived health and actual health based on income levels. Using 2019 data from the CDC's Natinoal Health Interview Survey and weights data from the 2019 Global Burden of Disease, we engineered a composite health score as a proxy for actual health and then ran a linear regression algorithm to identify any patterns of interest. We found that higher income was associated with increased accuracy for individuals in identifying better health, while also reducing accuracy in identifying poorer health. For lower income, the opposite was found to be true, with accuracy increasing as actual health decreased. Our findings were corroborated with existing literature and model validation showed 66.67% accuracy.
 
-Link for NHIS Data: https://www.cdc.gov/nchs/nhis/2019nhis.htm
+Link for NHIS Data (Demographic data, perceived health, medical conditions): https://www.cdc.gov/nchs/nhis/2019nhis.htm
 
-Link for Global Burden of Disease Data: http://ghdx.healthdata.org/record/ihme-data/gbd-2019-disability-weights
+Link for Global Burden of Disease Data (Weights): http://ghdx.healthdata.org/record/ihme-data/gbd-2019-disability-weights
 
 Link for Written Report: https://docs.google.com/document/d/12k2GaEtLsVr1F_LX3-9aycEpr9UeC-WAVRf1-O-WwFI/edit?usp=sharing
 

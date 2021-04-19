@@ -21,10 +21,8 @@ library(e1071)
 ```{r}
 valid_data<-read.csv("adult19.csv")
 #VARIABLES
-var_names<-c("PHSTAT_A","HISPALLP_A",
-  "HISDETP_A",
+var_names<-c("PHSTAT_A",
   "INCGRP_A",
-  "URBRRL",
   "ASEV_A",
   "ARTHEV_A",
  "CHDEV_A",
@@ -66,12 +64,17 @@ valid_data_df<-valid_data[,var_names]
 
 valid_data_df <- as.data.frame(apply(valid_data_df, 2, function(x) as.factor(x)))
 
+names(which(colSums(is.na(valid_data_df)) > 0))
 
 for(i in 1:ncol(valid_data_df)){
   tempcol <- valid_data_df[,i]
   tempcol[is.na(tempcol)] <- "Missing"
   valid_data_df[,i] <- tempcol
 }
+
+#Remove rows where perceived health is not 1:5
+valid_data_df<-valid_data_df[which(valid_data_df$PHSTAT_A != 7),]
+valid_data_df<-valid_data_df[which(valid_data_df$PHSTAT_A != 9),]
 ```
 
 #Assign Score
@@ -146,28 +149,8 @@ for(i in 1:nrow(valid_data_df)){
   if(valid_data_df$UTERUCAN_A[i]==1){
     valid_data_df$score[i]<-sum(valid_data_df$score[i], 0.332)}
 }
-```
 
-#Model
-```{r}
-lm1<-lm(score ~ PHSTAT_A:INCGRP_A -1,data = valid_data_df)
-mod2 <- as.data.frame(summary(lm1)$coefficients)
-mod2$sig <- NA
-for(i in 1:nrow(mod2)){
-  if(mod2[i, "Pr(>|t|)"] <=0.001){
-    mod2[i, "sig"] <- "***"
-  }else if(mod2[i, "Pr(>|t|)"] <= 0.01){
-    mod2[i, "sig"] <- "**"
-  }else if(mod2[i, "Pr(>|t|)"] <= 0.05){
-    mod2[i, "sig"] <- "*"
-  }else if(mod2[i, "Pr(>|t|)"] <= 0.1){
-    mod2[i, "sig"] <- "."
-  }else if(mod2[i, "Pr(>|t|)"] > 0.1){
-    mod2[i, "sig"] <- ""
-  }
-}
-valid_data_df$INCGRP_A
-#View(mod2)
+(length(which(valid_data_df$score>1.5))/nrow(valid_data_df))*100
 ```
 
 #Assign & Create score quantiles
@@ -210,171 +193,28 @@ for(i in 1:nrow(valid_data_df)){
 }
 ```
 
-#Table Creation
+
+
+#Model
 ```{r}
-#This table is saying the % of people who answered exactly correctly by each cell (subset of data based on row/column intersection, so the value is based on total number of people who belong to x actual health category and y income bracket)
-finaltab<-matrix(NA, nrow=5, ncol=7)
-for(i in 1:length(unique(valid_data_df$INCGRP_A))){
-  for(x in 1:length(unique(valid_data_df$PHSTAT_A))){
-    test<-valid_data_df$percep_true[valid_data_df$INCGRP_A==i & valid_data_df$score_quant==x] 
-    vec1<-sum(test)/length(test)
-    finaltab[i,x]<-vec1
+lm1<-lm(score ~ PHSTAT_A:INCGRP_A -1,data = valid_data_df)
+mod2 <- as.data.frame(summary(lm1)$coefficients)
+mod2$sig <- NA
+for(i in 1:nrow(mod2)){
+  if(mod2[i, "Pr(>|t|)"] <=0.001){
+    mod2[i, "sig"] <- "***"
+  }else if(mod2[i, "Pr(>|t|)"] <= 0.01){
+    mod2[i, "sig"] <- "**"
+  }else if(mod2[i, "Pr(>|t|)"] <= 0.05){
+    mod2[i, "sig"] <- "*"
+  }else if(mod2[i, "Pr(>|t|)"] <= 0.1){
+    mod2[i, "sig"] <- "."
+  }else if(mod2[i, "Pr(>|t|)"] > 0.1){
+    mod2[i, "sig"] <- ""
   }
 }
-
-#finaltab<-finaltab[,-c(6,7)]
-rownames(finaltab) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
-colnames(finaltab) <- c("Excellent","Very Good","Good","Fair","Poor", "Don't Know", "Missing")
-finaltab<-round((finaltab*100), 2)
-finaltab
-
-#This table is saying the % of people who answered correctly within +/-1 category by each cell (subset of data based on row/column intersection, so the value is based on total number of people who belong to x actual health category and y income bracket)
-finaltab2<-matrix(NA, nrow=5, ncol=7)
-for(i in 1:length(unique(valid_data_df$INCGRP_A))){
-  for(x in 1:length(unique(valid_data_df$PHSTAT_A))){
-    test<-valid_data_df$percep_true_2[valid_data_df$INCGRP_A==i & valid_data_df$score_quant==x] 
-    vec1<-sum(test)/length(test)
-    finaltab2[i,x]<-vec1
-  }
-}
-rownames(finaltab2) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
-colnames(finaltab2) <- c("Excellent","Very Good","Good","Fair","Poor", "Don't Know", "Missing")
-finaltab2<-round((finaltab2*100), 2)
-finaltab2
-
-
-#This table is how many responses were exactly correct for each individual perceived category by income bracket. Each cell is saying x% of people in y income category were correct.
-finaltab_100<-matrix(NA, nrow=5, ncol=7)
-for(i in 1:length(unique(valid_data_df$INCGRP_A))){
-  for(x in 1:length(unique(valid_data_df$PHSTAT_A))){
-    test<-valid_data_df$percep_true[valid_data_df$INCGRP_A==i & valid_data_df$score_quant==x] 
-    vec1<-sum(test)/nrow(valid_data_df[valid_data_df$INCGRP_A==i,])
-    finaltab_100[i,x]<-vec1
-  }
-}
-rownames(finaltab_100) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
-colnames(finaltab_100) <- c("Excellent","Very Good","Good","Fair","Poor","Row Total", "missing")
-finaltab_100<-round((finaltab_100*100), 2)
-finaltab_100[,6]<-rowSums(finaltab_100)
-finaltab_100<-finaltab_100[,-c(7)]
-finaltab_100
-
-
-
-#This table is how many responses were correct within +/-1 perceieved health category by income bracket Each cell is saying x% of people in y income bracket were correctly within +/-1 perceived health category.
-finaltab_100_2<-matrix(NA, nrow=5, ncol=7)
-for(i in 1:length(unique(valid_data_df$INCGRP_A))){
-  for(x in 1:length(unique(valid_data_df$PHSTAT_A))){
-    test<-valid_data_df$percep_true_2[valid_data_df$INCGRP_A==i & valid_data_df$score_quant==x] 
-    vec1<-sum(test)/nrow(valid_data_df[valid_data_df$INCGRP_A==i,])
-    finaltab_100_2[i,x]<-vec1
-  }
-}
-
-rownames(finaltab_100_2) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
-colnames(finaltab_100_2) <- c("Excellent","Very Good","Good","Fair","Poor","Row Total", "missing")
-finaltab_100_2<-round((finaltab_100_2*100), 2)
-finaltab_100_2[,6]<-rowSums(finaltab_100_2)
-finaltab_100_2<-finaltab_100_2[,-c(7)]
-finaltab_100_2
-
-#tables, if true excellent or true poor, row adds up to 100, other col show where inaccuracies went
-
-#table for poor and excellent examining where percent of other choices went
-
-finaltab_excel<-matrix(NA, nrow=5, ncol=7)
-for(i in 1:length(unique(valid_data_df$INCGRP_A))){
-  for(x in 1:length(unique(valid_data_df$PHSTAT_A))){
-  test<-valid_data_df[valid_data_df$INCGRP_A==i & valid_data_df$score_quant==1,]
-  vec1<-nrow(test[test$PHSTAT_A==unique(sort(test$PHSTAT_A, decreasing=F))[x],])/nrow(test)
-  finaltab_excel[i,x]<-vec1
-  }
-}
-finaltab_excel<-finaltab_excel[,-c(6,7)]
-finaltab_excel<-round((finaltab_excel*100), 2)
-finaltab_excel<-cbind(finaltab_excel,c(rowSums(finaltab_excel)))
-rownames(finaltab_excel) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
-colnames(finaltab_excel) <- c("Excellent","Very Good","Good","Fair","Poor","Row Total")
-finaltab_excel
-
-
-
-finaltab_poor<-matrix(NA, nrow=5, ncol=7)
-for(i in 1:length(unique(valid_data_df$INCGRP_A))){
-  for(x in 1:length(unique(valid_data_df$PHSTAT_A))){
-  test<-valid_data_df[valid_data_df$INCGRP_A==i & valid_data_df$score_quant==5,]
-  vec1<-nrow(test[test$PHSTAT_A==unique(sort(test$PHSTAT_A, decreasing=F))[x],])/nrow(test)
-  finaltab_poor[i,x]<-vec1
-  }
-}
-finaltab_poor<-finaltab_poor[,-c(6,7)]
-finaltab_poor<-round((finaltab_poor*100), 2)
-finaltab_poor<-cbind(finaltab_poor,c(rowSums(finaltab_poor)))
-colnames(finaltab_poor) <- c("Excellent","Very Good","Good","Fair","Poor","Row Total")
-rownames(finaltab_poor) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
-finaltab_poor
-
-finaltab_excel
-finaltab2
-```
-
-```{r}
-#This table is saying the % of people who answered exactly correctly by each cell (subset of data based on row/column intersection, so the value is based on total number of people who belong to x actual health category and y income bracket)
-finaltab
-
-#This table is saying the % of people who answered correctly within +/-1 category by each cell (subset of data based on row/column intersection, so the value is based on total number of people who belong to x actual health category and y income bracket)
-finaltab2
-
-#This table is how many responses were exactly correct for each individual perceived category by income bracket. Each cell is saying x% of people in y income category were correct.
-finaltab_100
-
-
-
-#This table is how many responses were correct within +/-1 perceieved health category by income bracket Each cell is saying x% of people in y income bracket were correctly within +/-1 perceived health category.
-finaltab_100_2
-
-#tables, if true excellent or true poor, row adds up to 100, other col show where inaccuracies went
-#table for poor and excellent examining where percent of other choices went
-finaltab_excel
-finaltab_poor
-```
-
-```{r}
-#tables for % wrong
-
-
-finaltab_wrong<-matrix(NA, nrow=5, ncol=7)
-for(i in 1:length(unique(valid_data_df$INCGRP_A))){
-  for(x in 1:length(unique(valid_data_df$PHSTAT_A))){
-    test<-valid_data_df$percep_true[valid_data_df$INCGRP_A==i & valid_data_df$PHSTAT_A==unique(sort(valid_data_df$PHSTAT_A, decreasing=F))[x]] 
-    vec1<-length(which(test==0))/length(test)
-    finaltab_wrong[i,x]<-vec1
-  }
-}
-
-#finaltab_wrong<-finaltab_wrong[,-c(6,7)]
-rownames(finaltab_wrong) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
-colnames(finaltab_wrong) <- c("Excellent","Very Good","Good","Fair","Poor", "Don't Know", "Missing")
-finaltab_wrong<-round((finaltab_wrong*100), 2)
-finaltab_wrong
-
-
-
-
-finaltab_100_wrong<-matrix(NA, nrow=5, ncol=7)
-for(i in 1:length(unique(valid_data_df$INCGRP_A))){
-  for(x in 1:length(unique(valid_data_df$PHSTAT_A))){
-    test<-valid_data_df$percep_true[valid_data_df$INCGRP_A==i & valid_data_df$PHSTAT_A==unique(sort(valid_data_df$PHSTAT_A, decreasing=F))[x]] 
-    vec1<-length(which(test==0))/nrow(valid_data_df[valid_data_df$INCGRP_A==i,])
-    finaltab_100_wrong[i,x]<-vec1
-  }
-}
-
-finaltab_100_wrong<-finaltab_100_wrong[,-c(6,7)]
-rownames(finaltab_100_wrong) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
-colnames(finaltab_100_wrong) <- c("Excellent","Very Good","Good","Fair","Poor", "Don't Know", "Missing")
-finaltab_100_wrong<-round((finaltab_100_wrong*100), 2)
-finaltab_100_wrong
+valid_data_df$INCGRP_A
+#View(mod2)
 ```
 
 ## Validation
@@ -493,52 +333,185 @@ confusionMatrix(factor(pred.score.categories), factor(test.score.categories))
 
 ```
 
-#Plots & tables
+
+
+#Pattern Tables 
 ```{r}
-valid_data_df$INCGRP_A
-valid_data_df$PHSTAT_A
+#This table is saying the % of people who answered exactly correctly by each cell (subset of data based on row/column intersection, so the value is based on total number of people who belong to x actual health category and y income bracket)
+finaltab<-matrix(NA, nrow=5, ncol=5)
+for(i in 1:length(unique(valid_data_df$INCGRP_A))){
+  for(x in 1:length(unique(valid_data_df$PHSTAT_A))){
+    test<-valid_data_df$percep_true[valid_data_df$INCGRP_A==i & valid_data_df$score_quant==x] 
+    vec1<-sum(test)/length(test)
+    finaltab[i,x]<-vec1
+  }
+}
+
+
+rownames(finaltab) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
+colnames(finaltab) <- c("Excellent","Very Good","Good","Fair","Poor")
+finaltab<-round((finaltab*100), 2)
+#finaltab
+
+#This table is saying the % of people who answered correctly within +/-1 category by each cell (subset of data based on row/column intersection, so the value is based on total number of people who belong to x actual health category and y income bracket)
+finaltab2<-matrix(NA, nrow=5, ncol=5)
+for(i in 1:length(unique(valid_data_df$INCGRP_A))){
+  for(x in 1:length(unique(valid_data_df$PHSTAT_A))){
+    test<-valid_data_df$percep_true_2[valid_data_df$INCGRP_A==i & valid_data_df$score_quant==x] 
+    vec1<-sum(test)/length(test)
+    finaltab2[i,x]<-vec1
+  }
+}
+rownames(finaltab2) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
+colnames(finaltab2) <- c("Excellent","Very Good","Good","Fair","Poor")
+finaltab2<-round((finaltab2*100), 2)
+#finaltab2
+
+
+#This table is how many responses were exactly correct for each individual perceived category by income bracket. Each cell is saying x% of people in y income category were correct.
+finaltab_100<-matrix(NA, nrow=5, ncol=5)
+for(i in 1:length(unique(valid_data_df$INCGRP_A))){
+  for(x in 1:length(unique(valid_data_df$PHSTAT_A))){
+    test<-valid_data_df$percep_true[valid_data_df$INCGRP_A==i & valid_data_df$score_quant==x] 
+    vec1<-sum(test)/nrow(valid_data_df[valid_data_df$INCGRP_A==i,])
+    finaltab_100[i,x]<-vec1
+  }
+}
+finaltab_100<-round((finaltab_100*100), 2)
+finaltab_100<-cbind(finaltab_100,rowSums(finaltab_100))
+rownames(finaltab_100) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
+colnames(finaltab_100) <- c("Excellent","Very Good","Good","Fair","Poor","Row Total")
+#finaltab_100
+
+
+
+#This table is how many responses were correct within +/-1 perceieved health category by income bracket Each cell is saying x% of people in y income bracket were correctly within +/-1 perceived health category.
+finaltab_100_2<-matrix(NA, nrow=5, ncol=5)
+for(i in 1:length(unique(valid_data_df$INCGRP_A))){
+  for(x in 1:length(unique(valid_data_df$PHSTAT_A))){
+    test<-valid_data_df$percep_true_2[valid_data_df$INCGRP_A==i & valid_data_df$score_quant==x] 
+    vec1<-sum(test)/nrow(valid_data_df[valid_data_df$INCGRP_A==i,])
+    finaltab_100_2[i,x]<-vec1
+  }
+}
+finaltab_100_2<-round((finaltab_100_2*100), 2)
+finaltab_100_2<-cbind(finaltab_100_2,rowSums(finaltab_100_2))
+rownames(finaltab_100_2) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
+colnames(finaltab_100_2) <- c("Excellent","Very Good","Good","Fair","Poor","Row Total")
+#finaltab_100_2
+
+#tables, if true excellent or true poor, row adds up to 100, other col show where inaccuracies went
+
+#table for poor and excellent examining where percent of other choices went
+
+finaltab_excel<-matrix(NA, nrow=5, ncol=5)
+for(i in 1:length(unique(valid_data_df$INCGRP_A))){
+  for(x in 1:length(unique(valid_data_df$PHSTAT_A))){
+  test<-valid_data_df[valid_data_df$INCGRP_A==i & valid_data_df$score_quant==1,]
+  vec1<-nrow(test[test$PHSTAT_A==unique(sort(test$PHSTAT_A, decreasing=F))[x],])/nrow(test)
+  finaltab_excel[i,x]<-vec1
+  }
+}
+finaltab_excel<-round((finaltab_excel*100), 2)
+rownames(finaltab_excel) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
+colnames(finaltab_excel) <- c("Excellent","Very Good","Good","Fair","Poor")
+#finaltab_excel
+
+
+
+finaltab_poor<-matrix(NA, nrow=5, ncol=5)
+for(i in 1:length(unique(valid_data_df$INCGRP_A))){
+  for(x in 1:length(unique(valid_data_df$PHSTAT_A))){
+  test<-valid_data_df[valid_data_df$INCGRP_A==i & valid_data_df$score_quant==5,]
+  vec1<-nrow(test[test$PHSTAT_A==unique(sort(test$PHSTAT_A, decreasing=F))[x],])/nrow(test)
+  finaltab_poor[i,x]<-vec1
+  }
+}
+finaltab_poor<-round((finaltab_poor*100), 2)
+colnames(finaltab_poor) <- c("Excellent","Very Good","Good","Fair","Poor")
+rownames(finaltab_poor) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
+#finaltab_poor
+```
+
+```{r}
+#This table is saying the % of people who answered exactly correctly by each cell (subset of data based on row/column intersection, so the value is based on total number of people who belong to x actual health category and y income bracket)
+finaltab
+finaltab2
+#This table is saying the % of people who answered correctly within +/-1 category by each cell (subset of data based on row/column intersection, so the value is based on total number of people who belong to x actual health category and y income bracket)
+finaltab2
+
+#This table is how many responses were exactly correct for each individual perceived category by income bracket. Each cell is saying x% of people in y income category were correct.
+finaltab_100
+
+
+
+#This table is how many responses were correct within +/-1 perceieved health category by income bracket Each cell is saying x% of people in y income bracket were correctly within +/-1 perceived health category.
+finaltab_100_2
+
+#tables, if true excellent or true poor, row adds up to 100, other col show where inaccuracies went
+#table for poor and excellent examining where percent of other choices went
+finaltab_excel
+finaltab_poor
+```
+
+
+#EDA Plots & tables
+```{r}
 ##Income bar chart
 ggplot(data = valid_data_df, aes(x=INCGRP_A))+
   geom_bar()+
   xlab("Income Bracket")+
   ylab("Count")+
-  scale_x_discrete(labels=c("1" = "$0-$34,999", "2" = "$35,000-$49,999",
-                              "3" = "$50,000-$74,999", "4"="$75,000-$99,999", "5"="$100,000+"))+
-  ggtitle("Distribution of Income Categories")
+  theme_minimal()+
+  scale_x_discrete(labels=c("1" = "$0-$34,999", "2" = "$35,000-$49,999","3" = "$50,000-$74,999", "4"="$75,000-$99,999", "5"="$100,000+"))
 
 ##Perceived bar chart
 ggplot(data = valid_data_df, aes(x=PHSTAT_A))+
   geom_bar()+
   xlab("Perceived Health")+
   ylab("Count")+
-  scale_x_discrete(labels=c("1" = "Excellent", "2" = "Very Good",
-                              "3" = "Good", "4"="Fair", "5"="Poor", "7"="Refused", "9"="Don't Know"))+
-  ggtitle("Distribution of Perceived Health Responses")
+  theme_minimal()+
+  scale_x_discrete(labels=c("1" = "Excellent", "2" = "Very Good","3" = "Good", "4"="Fair", "5"="Poor", "7"="Refused", "9"="Don't Know"))
 
-##combination of above in stacked bar chart
-ggplot(data = valid_data_df, aes(fill=INCGRP_A, x=PHSTAT_A))+
-  geom_bar(position="stack")+
-  xlab("Perceived Health")+
-  ylab("Count")+
-  scale_x_discrete(labels=c("1" = "Excellent", "2" = "Very Good",
-                              "3" = "Good", "4"="Fair", "5"="Poor", "7"="Refused", "9"="Don't Know"))+
-  ggtitle("Distribution of Perceived Health Responses by Income")+
-  scale_fill_discrete(labels=c("1" = "$0-$34,999", "2" = "$35,000-$49,999",
-                              "3" = "$50,000-$74,999", "4"="$75,000-$99,999", "5"="$100,000+"))+
-  labs(fill="Income Category")
 
 
 ##Score histogram
 ggplot(data = valid_data_df, aes(x=score))+
+  theme_minimal()+
   geom_histogram(breaks=seq(0,2.5, by=0.05),color="black", fill="Black")+
   xlab("Score")+
-  ggtitle("Distribution of Health Score")
+  ylab("Count")
+
+range(valid_data_df$score)
 
 
-```
+#Perceived health by income
+health_inc_tab<-matrix(NA, nrow=5, ncol=5)
+for(i in 1:length(unique(valid_data_df$INCGRP_A))){
+  for(x in 1:length(unique(valid_data_df$PHSTAT_A))){
+    test<-valid_data_df[valid_data_df$INCGRP_A==i,]
+    vec1<-nrow(test[test$PHSTAT_A==x,])/nrow(test[test$INCGRP_A==i,])
+    health_inc_tab[i,x]<-vec1
+  }
+}
+health_inc_tab<-round((health_inc_tab*100), 2)
+rownames(health_inc_tab) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
+colnames(health_inc_tab) <- c("Excellent","Very Good","Good","Fair","Poor")
+#health_inc_tab
 
-```{r}
-
+#Score quintiles by income
+quant_inc_tab<-matrix(NA, nrow=5, ncol=5)
+for(i in 1:length(unique(valid_data_df$INCGRP_A))){
+  for(x in 1:length(unique(valid_data_df$score_quant))){
+    test<-valid_data_df[valid_data_df$INCGRP_A==i,]
+    vec1<-nrow(test[test$score_quant==x,])/nrow(test[test$INCGRP_A==i,])
+    quant_inc_tab[i,x]<-vec1
+  }
+}
+quant_inc_tab<-round((quant_inc_tab*100), 2)
+rownames(quant_inc_tab) <- c("<34,999","35,000-49,999","50,000-74,999","75,000-99,999","100,000+")
+colnames(quant_inc_tab) <- c("Excellent","Very Good","Good","Fair","Poor")
+#quant_inc_tab
 ```
 
 

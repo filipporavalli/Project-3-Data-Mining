@@ -197,7 +197,7 @@ for(i in 1:nrow(valid_data_df)){
 
 #Model
 ```{r}
-lm1<-lm(score ~ PHSTAT_A:INCGRP_A -1,data = valid_data_df)
+lm1<-lm(score ~ PHSTAT_A:INCGRP_A,data = valid_data_df)
 mod2 <- as.data.frame(summary(lm1)$coefficients)
 mod2$sig <- NA
 for(i in 1:nrow(mod2)){
@@ -213,8 +213,16 @@ for(i in 1:nrow(mod2)){
     mod2[i, "sig"] <- ""
   }
 }
-valid_data_df$INCGRP_A
-#View(mod2)
+#valid_data_df$INCGRP_A
+View(mod2)
+write.csv(mod2, "lm_output.csv")
+summary(lm1)
+
+lm2<-lm(score ~ PHSTAT_A,data = valid_data_df)
+summary(lm2)
+
+lm3<-lm(score ~ INCGRP_A,data = valid_data_df)
+summary(lm3)
 ```
 
 
@@ -240,7 +248,7 @@ for (q in 1:n){
 	split.rule <- trainControl(method="repeatedcv", number = 5, repeats = 2, classProbs = F, summaryFunction = defaultSummary)	
 	glmModel <- suppressWarnings(train(score ~ PHSTAT_A:INCGRP_A, data = training.data, trControl = split.rule, method = "glm", preProc = c("center", "scale"), metric = "RMSE", 	na.action = na.omit))
 	
-	glmTest <- predict(glmModel, newdata = testing.data)
+	suppressWarnings(glmTest <- predict(glmModel, newdata = testing.data))
 	
 
 	

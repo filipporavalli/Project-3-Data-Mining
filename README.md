@@ -5,7 +5,7 @@ Link for NHIS Data (Demographic data, perceived health, medical conditions): htt
 
 Link for Global Burden of Disease Data (Weights): http://ghdx.healthdata.org/record/ihme-data/gbd-2019-disability-weights
 
-Link for Written Report: https://docs.google.com/document/d/12k2GaEtLsVr1F_LX3-9aycEpr9UeC-WAVRf1-O-WwFI/edit?usp=sharing
+Link for Written Report: https://github.com/filipporavalli/Project-3-Data-Mining/blob/main/fr2420%20nrr2121%20Project%203%20Report.pdf
 
 To reproduce:
 Our RMD file contains the necessary variables that overlapped between both datasets that have been hardcoded in. The NHIS dataset used was the 2019 "Sample Adult Interview" and the corresponding CSV file was downloaded. The weights data was obtained from the IHME website. The imputed health score weights have also been hard coded. To reproduce, downloading both datasets and subsetting income and perceived health in addition to the medical conditions which overalpped in the NHIS dataset will result in creating the processed dataset, before score creation. To create the health score, use the estimated weight data from the IHME dataset for each overlapping condition. If a condition had multiple weights (Eg. Different weights for different disease severity stage), averages were taken and used as the weight for the corresponding condition in the NHIS data. Our code lists these steps and all code used for the algorithm and visualization creation can be found in the RMD file.
